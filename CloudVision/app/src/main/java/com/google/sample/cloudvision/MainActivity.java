@@ -56,8 +56,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private static final String CLOUD_VISION_API_KEY = "AIzaSyAlHXPpVJHdF9K7EPoNxMJzdIaKrdflWtQ";
@@ -73,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView mImageDetails;
     private ImageView mMainImage;
+    Set<String> fruitSet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        initFruitList();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -106,6 +111,9 @@ public class MainActivity extends AppCompatActivity {
 
         mImageDetails = (TextView) findViewById(R.id.image_details);
         mMainImage = (ImageView) findViewById(R.id.main_image);
+
+        System.out.println(fruitSet.contains("Fatoush"));
+
     }
 
     public void startGalleryChooser() {
@@ -274,6 +282,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
             protected void onPostExecute(String result) {
+                /*if (result.equals("Cloud Vision API request failed. Check logs for details.")) {
+                    mImageDetails.setText("We couldn't identify the picture, please try again");
+                    return;
+                }*/
                 mImageDetails.setText(result);
             }
         }.execute();
@@ -300,18 +312,137 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String convertResponseToString(BatchAnnotateImagesResponse response) {
-        String message = "I found these things:\n\n";
 
         List<EntityAnnotation> labels = response.getResponses().get(0).getLabelAnnotations();
+
+        String message = "";
         if (labels != null) {
             for (EntityAnnotation label : labels) {
-                message += String.format(Locale.US, "%.3f: %s", label.getScore(), label.getDescription());
-                message += "\n";
+                if (fruitSet.contains(label.getDescription())) {
+                    message = "Interesting! The picture contains:\n";
+                    message += label.getDescription();
+                    message += "\n";
+//                    message += String.format(Locale.US, "%.3f: %s", label.getScore(), label.getDescription());
+                    break;
+                }
+
+                // message += String.format(Locale.US, "%.3f: %s", label.getScore(), label.getDescription());
+                // message += "\n";
             }
-        } else {
-            message += "nothing";
         }
+        if (message.equals(""))
+            message += "We couldn't identify the picture, please try again.";
 
         return message;
+    }
+
+    private void initFruitList() {
+        String fruitsDB[] = { "apple",
+                "armenian cucumber",
+                "asian pears",
+                "avocado",
+                "banana",
+                "barbados cherry",
+                "black crowberry",
+                "black currants",
+                "blackberries",
+                "blood orange",
+                "blueberries",
+                "boysenberries",
+                "breadfruit",
+                "brown turkey fig",
+                "cactus pear",
+                "canary melon",
+                "cantaloupe",
+                "cape gooseberries",
+                "cara cara navel orange",
+                "caribbean june plum",
+                "carissa",
+                "casaba melon",
+                "champagne grapes",
+                "cherimoya",
+                "cherries",
+                "chokecherries",
+                "clementines",
+                "coconut",
+                "concord grapes",
+                "cotton candy grapes",
+                "crab apples",
+                "crenshaw melon",
+                "custard apple",
+                "dates",
+                "date plum",
+                "durian",
+                "elderberries",
+                "feijoa",
+                "galia melon",
+                "golden kiwifruit",
+                "grape juice",
+                "grapefruit",
+                "grapes",
+                "guava",
+                "honeycrisp apple",
+                "honeydew melon",
+                "huckleberries",
+                "jackfruit",
+                "jambolan",
+                "jujube",
+                "kaffir lime",
+                "key lime",
+                "kiwano",
+                "kiwifruit",
+                "kumquat",
+                "lemon",
+                "lime",
+                "loganberries",
+                "longan",
+                "loquat",
+                "lychee",
+                "mamey sapote",
+                "mango",
+                "mangosteen",
+                "mandarin orange",
+                "maradol papaya",
+                "mediterranean medlar",
+                "mulberries",
+                "muscadine grapes",
+                "nectarine",
+                "orange",
+                "papaya",
+                "passion fruit",
+                "peach",
+                "pear",
+                "persian melon",
+                "persimmon",
+                "pineapple",
+                "plantain",
+                "plum",
+                "pomegranate",
+                "pummelo",
+                "quince",
+                "raisins",
+                "raspberries",
+                "red banana",
+                "red currants",
+                "rose apple",
+                "salmonberry",
+                "sapodilla",
+                "sapote",
+                "sharon fruit",
+                "soursop",
+                "south african baby pineapple",
+                "star fruit",
+                "strawberries",
+                "strawberry guava",
+                "strawberry papaya",
+                "sugar apple",
+                "surinam cherry",
+                "tangerine",
+                "ugli fruit",
+                "water coconut",
+                "watermelon",
+                "wild blueberries" };
+
+        fruitSet = new HashSet<String>(Arrays.asList(fruitsDB));
     }
 }
