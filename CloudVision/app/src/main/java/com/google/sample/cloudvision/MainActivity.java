@@ -20,10 +20,12 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.icu.util.RangeValueIterator;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -52,6 +54,11 @@ import com.google.api.services.vision.v1.model.EntityAnnotation;
 import com.google.api.services.vision.v1.model.Feature;
 import com.google.api.services.vision.v1.model.Image;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -77,6 +84,42 @@ public class MainActivity extends AppCompatActivity {
     private TextView mImageDetails;
     private ImageView mMainImage;
     Set<String> fruitSet;
+    private TextView text;
+
+
+    private class ConnectToJsoup extends AsyncTask<Void, Void, String> {
+
+        public String str;
+        ConnectToJsoup(String str1){
+            str=str1;
+
+        }
+        @Override
+        protected String doInBackground(Void... params) {
+            String title ="http://en.wikipedia.org/wiki/"+ str;
+            Document doc;
+            try {
+                doc = Jsoup.connect(title).get();
+                Elements paragraphs = doc.select("p");
+                Element firstParagraph = paragraphs.first();
+                title=firstParagraph.text();
+
+//                Element contentDiv = doc.select("p:contains(apple)").first().get(1); //p:contains..
+//                containstitle = contentDiv.toString();
+                System.out.print(title);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return title;
+        }
+
+
+        @Override
+        protected void onPostExecute(String result) {
+            //if you had a ui element, you could display the title
+            ((TextView)findViewById (R.id.textView2)).setText (result);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +129,11 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         initFruitList();
+        try {
+            updateText(null, "apple");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -113,6 +161,11 @@ public class MainActivity extends AppCompatActivity {
         mMainImage = (ImageView) findViewById(R.id.main_image);
 
         System.out.println(fruitSet.contains("Fatoush"));
+
+    }
+
+    public void updateText(View v, String object) throws IOException {
+        new ConnectToJsoup(object).execute();
 
     }
 
