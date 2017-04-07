@@ -35,10 +35,15 @@
 
     <TextView
         android:id="@+id/textView2"
-        android:layout_width="803dp"
-        android:layout_height="195dp"
-        android:layout_gravity="bottom|left"
-        android:text="TextView" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:paddingBottom="80dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:textSize="18sp"
+        android:maxLines="15"
+        android:text="" />
 
 
 </android.support.design.widget.CoordinatorLayout>

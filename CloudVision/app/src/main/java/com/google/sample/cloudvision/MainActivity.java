@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.FileProvider;
@@ -35,6 +36,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -69,7 +71,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity  implements
+        TextToSpeech.OnInitListener {
     private static final String CLOUD_VISION_API_KEY = "AIzaSyAlHXPpVJHdF9K7EPoNxMJzdIaKrdflWtQ";
     public static final String FILE_NAME = "temp.jpg";
     private static final String ANDROID_CERT_HEADER = "X-Android-Cert";
@@ -85,6 +88,9 @@ public class MainActivity extends AppCompatActivity {
     private ImageView mMainImage;
     Set<String> fruitSet;
     private TextView text;
+    private TextToSpeech tts;
+    private ImageButton btnSpeak;
+    private String lastSearch;
 
 
     private class ConnectToJsoup extends AsyncTask<Void, Void, String> {
@@ -92,8 +98,8 @@ public class MainActivity extends AppCompatActivity {
         public String str;
         ConnectToJsoup(String str1){
             str=str1;
-
         }
+
         @Override
         protected String doInBackground(Void... params) {
             String title ="http://en.wikipedia.org/wiki/"+ str;
@@ -103,10 +109,6 @@ public class MainActivity extends AppCompatActivity {
                 Elements paragraphs = doc.select("p");
                 Element firstParagraph = paragraphs.first();
                 title=firstParagraph.text();
-
-//                Element contentDiv = doc.select("p:contains(apple)").first().get(1); //p:contains..
-//                containstitle = contentDiv.toString();
-                System.out.print(title);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -117,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             //if you had a ui element, you could display the title
-            ((TextView)findViewById (R.id.textView2)).setText (result);
+            ((TextView) findViewById(R.id.textView2)).setText(result);
         }
     }
 
@@ -129,11 +131,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         initFruitList();
-        try {
-            updateText(null, "apple");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -160,13 +158,53 @@ public class MainActivity extends AppCompatActivity {
         mImageDetails = (TextView) findViewById(R.id.image_details);
         mMainImage = (ImageView) findViewById(R.id.main_image);
 
-        System.out.println(fruitSet.contains("Fatoush"));
+        tts = new TextToSpeech(this, this);
+        btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
 
+        // button on click event
+        btnSpeak.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                speakOut();
+            }
+        });
+
+
+    }
+
+    @Override
+    public void onDestroy() {
+        // Don't forget to shutdown tts!
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            int result = tts.setLanguage(Locale.US);
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "This Language is not supported");
+            } else {
+                btnSpeak.setEnabled(true);
+                speakOut();
+            }
+        } else {
+            Log.e("TTS", "Initilization Failed!");
+        }
+    }
+
+    private void speakOut() {
+        if (lastSearch != "")
+            tts.speak(lastSearch, TextToSpeech.QUEUE_FLUSH, null);
     }
 
     public void updateText(View v, String object) throws IOException {
         new ConnectToJsoup(object).execute();
-
     }
 
     public void startGalleryChooser() {
@@ -253,6 +291,10 @@ public class MainActivity extends AppCompatActivity {
     private void callCloudVision(final Bitmap bitmap) throws IOException {
         // Switch text to loading
         mImageDetails.setText(R.string.loading_message);
+        mImageDetails.setTextSize(16);
+
+        ((TextView) findViewById(R.id.textView2)).setText("");
+
 
         // Do the real work in an async task, because we need to use the network anyway
         new AsyncTask<Object, Void, String>() {
@@ -335,11 +377,21 @@ public class MainActivity extends AppCompatActivity {
             }
 
             protected void onPostExecute(String result) {
-                /*if (result.equals("Cloud Vision API request failed. Check logs for details.")) {
+                if (result.equals("We couldn't identify the picture, please try again.")) {
                     mImageDetails.setText("We couldn't identify the picture, please try again");
+                    lastSearch = "";
                     return;
-                }*/
-                mImageDetails.setText(result);
+                }
+                try {
+                    mImageDetails.setText(result);
+                    mImageDetails.setTextSize(24);
+                    lastSearch = result;
+
+                    speakOut();
+                    updateText(null, result);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }.execute();
     }
@@ -371,20 +423,14 @@ public class MainActivity extends AppCompatActivity {
         String message = "";
         if (labels != null) {
             for (EntityAnnotation label : labels) {
-                if (fruitSet.contains(label.getDescription())) {
-                    message = "Interesting! The picture contains:\n";
-                    message += label.getDescription();
-                    message += "\n";
-//                    message += String.format(Locale.US, "%.3f: %s", label.getScore(), label.getDescription());
+                if (fruitSet.contains(label.getDescription().toLowerCase())) {
+                    message = label.getDescription();
                     break;
                 }
-
-                // message += String.format(Locale.US, "%.3f: %s", label.getScore(), label.getDescription());
-                // message += "\n";
             }
         }
         if (message.equals(""))
-            message += "We couldn't identify the picture, please try again.";
+            message = "We couldn't identify the picture, please try again.";
 
         return message;
     }
@@ -494,7 +540,29 @@ public class MainActivity extends AppCompatActivity {
                 "ugli fruit",
                 "water coconut",
                 "watermelon",
-                "wild blueberries" };
+                "wild blueberries",
+
+                "pen",
+                "pencil",
+                "keyboard",
+                "mouse",
+                "laptop",
+                "headphones",
+                "speaker", "speakers",
+                "phone",
+                "iPod", "ipod",
+                "iPad", "ipad",
+                "tablet",
+                "monitor",
+                "screen",
+                "watch",
+                "smartphone",
+                "shirt",
+                "tshirt",
+                "t-shirt",
+                "balloon", "balloons"
+
+        };
 
         fruitSet = new HashSet<String>(Arrays.asList(fruitsDB));
     }
