@@ -34,6 +34,8 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -85,6 +87,7 @@ public class MainActivity extends AppCompatActivity  implements
     public static final int CAMERA_IMAGE_REQUEST = 3;
 
     private TextView mImageDetails;
+    private TextView readMore;
     private ImageView mMainImage;
     Set<String> fruitSet;
     private TextView text;
@@ -103,6 +106,7 @@ public class MainActivity extends AppCompatActivity  implements
         @Override
         protected String doInBackground(Void... params) {
             String title ="http://en.wikipedia.org/wiki/"+ str;
+
             Document doc;
             try {
                 doc = Jsoup.connect(title).get();
@@ -160,6 +164,8 @@ public class MainActivity extends AppCompatActivity  implements
 
         tts = new TextToSpeech(this, this);
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
+
+        readMore = (TextView) findViewById(R.id.readMore);
 
         // button on click event
         btnSpeak.setOnClickListener(new View.OnClickListener() {
@@ -294,7 +300,7 @@ public class MainActivity extends AppCompatActivity  implements
         mImageDetails.setTextSize(16);
 
         ((TextView) findViewById(R.id.textView2)).setText("");
-
+        readMore.setVisibility(View.INVISIBLE);
 
         // Do the real work in an async task, because we need to use the network anyway
         new AsyncTask<Object, Void, String>() {
@@ -389,6 +395,13 @@ public class MainActivity extends AppCompatActivity  implements
 
                     speakOut();
                     updateText(null, result);
+
+                    readMore.setVisibility(View.VISIBLE);
+                    String title ="http://en.wikipedia.org/wiki/" + result;
+                    readMore.setText(Html.fromHtml("<a href=\"" + title + "\">Read more...</a> "));
+                    readMore.setMovementMethod(LinkMovementMethod.getInstance());
+
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

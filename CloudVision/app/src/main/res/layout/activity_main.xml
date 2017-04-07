@@ -42,8 +42,19 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:textSize="18sp"
-        android:maxLines="15"
+        android:maxLines="13"
         android:text="" />
+
+    <TextView
+        android:id="@+id/readMore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/read_more"
+        android:layout_gravity="bottom|left"
+        android:paddingBottom="15dp"
+        android:paddingLeft="10dp"
+        android:visibility="invisible"
+        android:linksClickable="true" />
 
 
 </android.support.design.widget.CoordinatorLayout>

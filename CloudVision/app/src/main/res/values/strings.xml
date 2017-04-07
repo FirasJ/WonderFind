@@ -11,4 +11,6 @@
 
     <string name="image_picker_error">Something is wrong with that image. Pick a different one please.</string>
     <string name="not_found_message">We couldn\'t identify the picture, please try again.</string>
+
+    <string name="read_more">Read more...</string>
 </resources>
